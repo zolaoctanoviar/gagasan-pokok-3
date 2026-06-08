@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Kuis: Gagasan Pokok & Pemahaman Teks | Bahasa Indonesia</title>
+    <!-- SQL.js (WebAssembly) untuk SQLite di browser -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, 'Segoe UI', 'Roboto', 'Poppins', sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #fef9e4 0%, #f0e7cf 100%);
+            min-height: 100vh;
+            padding: 30px 20px;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .quiz-app {
+            max-width: 1200px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 2rem;
+            box-shadow: 0 25px 45px -12px rgba(0,0,0,0.35);
+            overflow: hidden;
+        }
+        .app-header {
+            background: #7b2c2c;
+            padding: 1.2rem 2rem;
+            color: white;
+            background-image: linear-gradient(135deg, #5e2a2a, #8b3c3c);
+        }
+        .app-header h1 {
+            margin: 0;
+            font-size: 1.7rem;
+            font-weight: 700;
+        }
+        .app-header p {
+            margin: 0.3rem 0 0;
+            opacity: 0.9;
+            font-size: 0.85rem;
+        }
+        .reading-panel {
+            background: #fffaf2;
+            border-bottom: 3px solid #d4a373;
+            padding: 1.4rem 2rem;
+            font-size: 0.96rem;
+            line-height: 1.65;
+            color: #2c2b28;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Georgia', 'Times New Roman', serif;
+        }
+        .reading-panel h3 {
+            margin: 0 0 12px 0;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #8b3c3c;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .reading-content p {
+            margin: 0 0 14px 0;
+            text-align: justify;
+        }
+        .reading-content strong {
+            color: #a75d2f;
+        }
+        .quiz-main {
+            padding: 1.8rem 2rem 1.5rem;
+            min-height: 500px;
+        }
+        .question-card {
+            background: #fefcf7;
+            border-radius: 1.5rem;
+            padding: 1.5rem 1.8rem;
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.05);
+            border: 1px solid #ecd9c2;
+            margin-bottom: 1.5rem;
+        }
+        .question-text {
+            font-size: 1.3rem;
+            font-weight: 650;
+            line-height: 1.4;
+            color: #5e2a2a;
+            margin-bottom: 1.6rem;
+        }
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+        }
+        .option-item {
+            background: #fefaf5;
+            border-radius: 1rem;
+            padding: 0.75rem 1rem;
+            border: 1px solid #e6d5bc;
+            transition: all 0.2s;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .option-item:hover {
+            background: #f7efe2;
+            border-color: #c68b5e;
+        }
+        input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #8b3c3c;
+            cursor: pointer;
+            margin: 0;
+            flex-shrink: 0;
+        }
+        .option-label {
+            font-size: 0.98rem;
+            color: #3d2c1f;
+            font-weight: 500;
+            cursor: pointer;
+            flex: 1;
+            line-height: 1.4;
+        }
+        .btn-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        button {
+            background: #936e4b;
+            border: none;
+            padding: 0.7rem 1.8rem;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        button:hover:not(:disabled) {
+            background: #73553a;
+            transform: translateY(-1px);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .submit-btn {
+            background: #9b6a3e;
+        }
+        .submit-btn:hover:not(:disabled) {
+            background: #7b4f2c;
+        }
+        .reset-btn {
+            background: #627c6f;
+        }
+        .reset-btn:hover {
+            background: #4a5f53;
+        }
+        .info-area {
+            background: #f7efe2;
+            border-radius: 1.2rem;
+            padding: 0.8rem 1.5rem;
+            margin-top: 1.4rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .status-badge {
+            font-weight: 500;
+            background: #e6cfb0;
+            padding: 5px 14px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            color: #4a2e1e;
+        }
+        .score-area {
+            font-weight: bold;
+            background: #8b3c3c;
+            color: white;
+            padding: 5px 14px;
+            border-radius: 40px;
+        }
+        .result-panel {
+            background: #fef9ef;
+            border-radius: 1.5rem;
+            padding: 1.4rem;
+            margin-top: 1.8rem;
+            border-left: 6px solid #c28b5e;
+        }
+        .answers-review {
+            max-height: 450px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+        .review-item {
+            border-bottom: 1px solid #eedfcb;
+            padding: 0.8rem 0;
+        }
+        .correct {
+            color: #2e6b47;
+            font-weight: bold;
+        }
+        .wrong {
+            color: #bc5a3c;
+            font-weight: bold;
+        }
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 1rem;
+            background: #fff7ed;
+            color: #7a5a44;
+            border-top: 1px solid #ecd9c2;
+        }
+        @media (max-width: 620px) {
+            .quiz-main { padding: 1.2rem; }
+            .reading-panel { padding: 1rem; }
+            .question-text { font-size: 1.1rem; }
+            .option-label { font-size: 0.85rem; }
+            button { padding: 0.5rem 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="quiz-app" id="quizApp">
+    <div class="app-header">
+        <h1>📖 Kuis: Gagasan Pokok & Pemahaman Teks</h1>
+        <p>Bahasa Indonesia | Menentukan Ide Utama, Simpulan, dan Informasi Tersurat/Tersirat</p>
+    </div>
+
+    <!-- TEKS BACAAN: PENTINGNYA KEARIFAN LOKAL DALAM BAHASA INDONESIA (TEMA GAGASAN POKOK) -->
+    <div class="reading-panel" id="readingSource">
+        <h3>📜 Teks Bacaan: "Kearifan Lokal sebagai Jati Diri Bangsa"</h3>
+        <div class="reading-content">
+            <p><strong>Paragraf 1:</strong> 
+            Indonesia dikenal sebagai negara yang kaya akan kearifan lokal. Setiap daerah memiliki tradisi, adat istiadat, nilai-nilai luhur, serta kearifan yang diwariskan turun-temurun. Kearifan lokal bukan sekadar peninggalan masa lalu, melainkan panduan hidup yang relevan untuk menyelesaikan berbagai persoalan masa kini, seperti menjaga keseimbangan alam, mempererat solidaritas sosial, dan menumbuhkan identitas budaya. Sayangnya, arus globalisasi dan modernisasi seringkali menggeser perhatian generasi muda terhadap nilai-nilai asli bangsanya. Banyak anak muda lebih akrab dengan budaya luar dibandingkan dengan tradisi daerahnya sendiri.
+            </p>
+            <p><strong>Paragraf 2:</strong>
+            Gagasan utama yang terkandung dalam kearifan lokal adalah kemampuan masyarakat untuk beradaptasi dengan lingkungan sekaligus mempertahankan nilai-nilai kebaikan. Contoh nyata terlihat pada sistem subak di Bali yang tidak hanya mengatur irigasi pertanian, tetapi juga mengandung filosofi harmoni antara manusia, alam, dan Tuhan. Di Jawa, ada konsep "gotong royong" yang menjadi perekat sosial saat bencana atau kegiatan bersama. Kearifan seperti ini sejatinya merupakan bentuk kecerdasan kolektif yang harus dijaga dan dikembangkan.
+            </p>
+            <p><strong>Paragraf 3:</strong>
+            Sayangnya, penguatan kearifan lokal dalam pendidikan formal masih terbatas. Kurikulum seringkali lebih menekankan aspek pengetahuan global tanpa menyelaraskan dengan konteks lokal. Padahal, pemahaman terhadap gagasan pokok dari budaya sendiri mampu membangun karakter dan rasa bangga sebagai bangsa Indonesia. Jika generasi muda kehilangan akar budayanya, maka jati diri bangsa akan luntur. Oleh karena itu, sudah saatnya kita mengintegrasikan kearifan lokal ke dalam pembelajaran, baik melalui cerita rakyat, permainan tradisional, maupun nilai-nilai musyawarah.
+            </p>
+            <p><strong>Paragraf 4:</strong>
+            Melestarikan kearifan lokal tidak berarti menolak kemajuan zaman. Justru, dengan berpegang pada nilai-nilai luhur, kita bisa menyaring budaya asing yang masuk dan mengambil sisi positifnya. Generasi milenial dan Gen Z dapat berperan aktif dengan mengemas kearifan lokal dalam bentuk konten digital, seni modern, atau wirausaha berbasis budaya. Dengan cara ini, gagasan pokok tentang kearifan lokal tidak hanya menjadi hafalan tetapi juga hidup dalam keseharian. Kesimpulannya, menghidupkan kembali kearifan lokal adalah investasi untuk memperkokoh ketahanan budaya dan karakter bangsa di tengah perubahan global.
+            </p>
+        </div>
+    </div>
+
+    <div class="quiz-main" id="mainContent">Memuat soal interaktif tentang gagasan pokok...</div>
+    <footer>🎯 Fokus: gagasan pokok, simpulan, & pemahaman teks "Kearifan Lokal" | Satu per satu | Jawab semua → lihat skor akhir</footer>
+</div>
+
+<script>
+    // ======================= DATABASE SOAL: MENENTUKAN GAGASAN POKOK, IDE UTAMA, SIMPULAN (BAHASA INDONESIA) =======================
+    const questionsData = [
+        { // Soal 1 -> gagasan pokok paragraf 1
+            id: 1,
+            text: "1. Gagasan pokok paragraf pertama teks 'Kearifan Lokal sebagai Jati Diri Bangsa' adalah ....",
+            opt_a: "A. Globalisasi menyebabkan generasi muda melupakan budaya daerah.",
+            opt_b: "B. Indonesia kaya akan kearifan lokal yang merupakan panduan hidup dan identitas bangsa, namun mulai terancam oleh arus globalisasi.",
+            opt_c: "C. Kearifan lokal hanya sekadar peninggalan masa lalu yang tidak berguna saat ini.",
+            opt_d: "D. Generasi muda saat ini sangat antusias mempelajari tradisi daerah.",
+            opt_e: "E. Kearifan lokal berfungsi untuk menjaga keseimbangan alam saja.",
+            correct: "B"
+        },
+        { // Soal 2 -> gagasan pokok paragraf 2
+            id: 2,
+            text: "2. Ide utama yang terdapat dalam paragraf kedua adalah ...",
+            opt_a: "A. Sistem subak di Bali hanya untuk mengairi sawah.",
+            opt_b: "B. Kearifan lokal adalah kemampuan masyarakat beradaptasi dengan lingkungan sambil mempertahankan nilai kebaikan, seperti subak dan gotong royong.",
+            opt_c: "C. Gotong royong hanya terjadi saat bencana alam.",
+            opt_d: "D. Masyarakat Indonesia tidak memiliki kecerdasan kolektif.",
+            opt_e: "E. Setiap daerah harus meninggalkan tradisi lamanya.",
+            correct: "B"
+        },
+        { // Soal 3 -> gagasan pokok paragraf 3
+            id: 3,
+            text: "3. Apakah inti permasalahan yang disampaikan pada paragraf ketiga?",
+            opt_a: "A. Pendidikan formal sudah sangat baik dalam mengajarkan kearifan lokal.",
+            opt_b: "B. Penguatan kearifan lokal dalam pendidikan masih terbatas sehingga jati diri bangsa terancam jika tidak segera diintegrasikan.",
+            opt_c: "C. Kurikulum nasional sangat ideal tanpa kekurangan.",
+            opt_d: "D. Generasi muda sangat bangga dengan budaya Indonesia.",
+            opt_e: "E. Permainan tradisional sudah tidak dikenal lagi.",
+            correct: "B"
+        },
+        { // Soal 4 -> gagasan pokok paragraf 4 (kesimpulan)
+            id: 4,
+            text: "4. Gagasan pokok paragraf keempat adalah ....",
+            opt_a: "A. Melestarikan kearifan lokal berarti menolak semua kemajuan zaman.",
+            opt_b: "B. Generasi milenial harus menghapus budaya asing sepenuhnya.",
+            opt_c: "C. Kearifan lokal harus dilestarikan dengan cara menyaring budaya asing dan mengemasnya secara kreatif, karena itu investasi ketahanan budaya.",
+            opt_d: "D. Hanya pemerintah yang bertanggung jawab melestarikan tradisi.",
+            opt_e: "E. Konten digital tidak berpengaruh terhadap pelestarian budaya.",
+            correct: "C"
+        },
+        { // Soal 5 -> simpulan seluruh teks
+            id: 5,
+            text: "5. Simpulan yang paling tepat berdasarkan keseluruhan teks 'Kearifan Lokal sebagai Jati Diri Bangsa' adalah ...",
+            opt_a: "A. Kearifan lokal tidak relevan dengan kehidupan modern.",
+            opt_b: "B. Bangsa Indonesia harus meninggalkan tradisi agar maju.",
+            opt_c: "C. Kearifan lokal adalah warisan yang harus dijaga dan diintegrasikan dalam pendidikan serta kehidupan digital guna memperkuat jati diri bangsa.",
+            opt_d: "D. Globalisasi lebih penting daripada kearifan lokal.",
+            opt_e: "E. Hanya masyarakat Bali yang memiliki kearifan lokal.",
+            correct: "C"
+        },
+        { // Soal 6 -> detail subak / contoh gagasan pokok
+            id: 6,
+            text: "6. Menurut teks, fungsi utama sistem subak di Bali selain irigasi adalah ....",
+            opt_a: "A. Meningkatkan hasil panen secara instan.",
+            opt_b: "B. Menggantikan peran pemerintah desa.",
+            opt_c: "C. Mengandung filosofi harmoni antara manusia, alam, dan Tuhan.",
+            opt_d: "D. Sebagai objek wisata internasional.",
+            opt_e: "E. Menghilangkan tradisi gotong royong.",
+            correct: "C"
+        },
+        { // Soal 7 -> gagasan pokok tentang ancaman
+            id: 7,
+            text: "7. Apakah ancaman utama terhadap kearifan lokal yang disebutkan dalam teks?",
+            opt_a: "A. Kurangnya museum budaya.",
+            opt_b: "B. Arus globalisasi dan modernisasi yang menggeser perhatian generasi muda dari nilai asli bangsa.",
+            opt_c: "C. Bencana alam yang sering terjadi.",
+            opt_d: "D. Sistem pendidikan yang terlalu bagus.",
+            opt_e: "E. Rendahnya minat wisatawan mancanegara.",
+            correct: "B"
+        },
+        { // Soal 8 -> gagasan pokok peran generasi muda
+            id: 8,
+            text: "8. Berdasarkan paragraf keempat, bagaimana peran generasi milenial dan Gen Z dalam melestarikan kearifan lokal?",
+            opt_a: "A. Menolak semua bentuk teknologi.",
+            opt_b: "B. Mengemas kearifan lokal dalam konten digital, seni modern, atau wirausaha berbasis budaya.",
+            opt_c: "C. Melarang budaya asing masuk sama sekali.",
+            opt_d: "D. Hanya mengkaji teori di sekolah.",
+            opt_e: "E. Meninggalkan kampung halaman.",
+            correct: "B"
+        },
+        { // Soal 9 -> nilai gotong royong sebagai gagasan pokok lokal
+            id: 9,
+            text: "9. Dalam teks tersebut, nilai 'gotong royong' dimaknai sebagai ....",
+            opt_a: "A. Bentuk kerja sama hanya saat ada kepentingan politik.",
+            opt_b: "B. Perekat sosial yang membantu saat bencana dan kegiatan bersama, mencerminkan kecerdasan kolektif.",
+            opt_c: "C. Kewajiban membayar iuran desa.",
+            opt_d: "D. Tradisi yang sudah tidak digunakan.",
+            opt_e: "E. Sistem balas jasa antar individu.",
+            correct: "B"
+        },
+        { // Soal 10 -> pertanyaan tersirat: gagasan pokok teks secara utuh
+            id: 10,
+            text: "10. Manakah pernyataan yang sesuai dengan gagasan pokok keseluruhan teks?",
+            opt_a: "A. Kearifan lokal menghambat kemajuan teknologi.",
+            opt_b: "B. Bangsa Indonesia harus melestarikan kearifan lokal sebagai jati diri tanpa menutup diri, serta mengintegrasikannya ke pendidikan dan gaya hidup modern.",
+            opt_c: "C. Generasi muda lebih baik belajar budaya luar.",
+            opt_d: "D. Pemerintah harus melarang semua budaya impor.",
+            opt_e: "E. Kearifan lokal hanya milik orang tua, bukan anak muda.",
+            correct: "B"
+        }
+    ];
+
+    // ======================= INISIALISASI SQLite + LOGIKA KUIS =======================
+    let db = null;
+    let allQuestions = [];
+    let totalQuestions = 0;
+    let currentIndex = 0;
+    let userSelections = [];
+    let quizCompleted = false;
+
+    async function initQuiz() {
+        const SQL = await initSqlJs({ 
+            locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.wasm` 
+        });
+        db = new SQL.Database();
+        
+        db.run(`CREATE TABLE questions (
+            id INTEGER PRIMARY KEY,
+            qtext TEXT,
+            opt_a TEXT, opt_b TEXT, opt_c TEXT, opt_d TEXT, opt_e TEXT,
+            correct_letter TEXT
+        )`);
+        
+        const insert = db.prepare(`INSERT INTO questions (id, qtext, opt_a, opt_b, opt_c, opt_d, opt_e, correct_letter) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`);
+        
+        for (let q of questionsData) {
+            insert.run([q.id, q.text, q.opt_a, q.opt_b, q.opt_c, q.opt_d, q.opt_e || "", q.correct]);
+        }
+        insert.free();
+        
+        const res = db.exec("SELECT id, qtext, opt_a, opt_b, opt_c, opt_d, opt_e, correct_letter FROM questions ORDER BY id");
+        if (res.length && res[0].values) {
+            allQuestions = res[0].values.map(row => ({
+                id: row[0],
+                text: row[1],
+                opt_a: row[2], opt_b: row[3], opt_c: row[4], opt_d: row[5], opt_e: row[6],
+                correct: row[7]
+            }));
+        }
+        totalQuestions = allQuestions.length;
+        userSelections = allQuestions.map(q => ({ qid: q.id, selected: null, isCorrect: false }));
+        renderCurrentQuestion();
+    }
+
+    function countAnswered() {
+        return userSelections.filter(s => s.selected !== null).length;
+    }
+
+    function saveCurrentAnswer(letter) {
+        const q = allQuestions[currentIndex];
+        const idx = userSelections.findIndex(s => s.qid === q.id);
+        if (idx !== -1) {
+            const isCorrect = (letter === q.correct);
+            userSelections[idx] = { qid: q.id, selected: letter, isCorrect: isCorrect };
+        }
+        updateInfoBar();
+    }
+
+    function updateInfoBar() {
+        const infoSpan = document.getElementById('liveScoreInfo');
+        if (infoSpan) infoSpan.innerText = `📋 Terjawab: ${countAnswered()}/${totalQuestions}`;
+        const progSpan = document.getElementById('progressText');
+        if (progSpan) progSpan.innerText = `Soal ${currentIndex+1} | ${countAnswered()}/${totalQuestions} dijawab`;
+    }
+
+    function finishAndShowResult() {
+        quizCompleted = true;
+        let correctCount = userSelections.filter(s => s.isCorrect === true).length;
+        let percent = Math.round((correctCount / totalQuestions) * 100);
+        
+        let reviewHtml = `<div class="answers-review">`;
+        for (let i = 0; i < allQuestions.length; i++) {
+            const q = allQuestions[i];
+            const user = userSelections.find(s => s.qid === q.id);
+            const userLetter = user?.selected || "(Tidak dijawab)";
+            const isUserCorrect = user?.isCorrect || false;
+            const correctLetter = q.correct;
+            
+            let correctText = "";
+            if (correctLetter === 'A') correctText = q.opt_a;
+            else if (correctLetter === 'B') correctText = q.opt_b;
+            else if (correctLetter === 'C') correctText = q.opt_c;
+            else if (correctLetter === 'D') correctText = q.opt_d;
+            else if (correctLetter === 'E') correctText = q.opt_e;
+            
+            let userChoiceText = "";
+            if (userLetter === 'A') userChoiceText = q.opt_a;
+            else if (userLetter === 'B') userChoiceText = q.opt_b;
+            else if (userLetter === 'C') userChoiceText = q.opt_c;
+            else if (userLetter === 'D') userChoiceText = q.opt_d;
+            else if (userLetter === 'E') userChoiceText = q.opt_e;
+            
+            const statusIcon = isUserCorrect ? '✅' : '❌';
+            reviewHtml += `
+                <div class="review-item">
+                    <strong>Soal ${q.id}. ${escapeHtml(q.text.substring(0, 130))}${q.text.length > 130 ? '...' : ''}</strong><br>
+                    ${statusIcon} Jawaban Anda: ${userLetter} - ${escapeHtml(userChoiceText || 'kosong')}<br>
+                    <span class="${isUserCorrect ? 'correct' : 'wrong'}">
+                        ${isUserCorrect ? '✔ Benar' : '✘ Salah'} (Kunci: ${correctLetter} → ${escapeHtml(correctText || '')})
+                    </span>
+                </div>
+            `;
+        }
+        reviewHtml += `</div>`;
+        
+        const finalHtml = `
+            <div class="result-panel">
+                <h3>📊 Hasil Akhir Kuis "Gagasan Pokok & Kearifan Lokal"</h3>
+                <p>Skor: <strong>${correctCount} / ${totalQuestions}</strong> (${percent}%)</p>
+                <p>📌 Rincian jawaban & pembahasan gagasan pokok:</p>
+                ${reviewHtml}
+                <hr>
+                <div style="display: flex; justify-content: flex-end;">
+                    <button id="restartQuizBtn" class="reset-btn">🔄 Kerjakan Ulang Kuis</button>
+                </div>
+            </div>
+        `;
+        const mainDiv = document.getElementById('mainContent');
+        mainDiv.innerHTML = finalHtml;
+        
+        const restartBtn = document.getElementById('restartQuizBtn');
+        if (restartBtn) restartBtn.addEventListener('click', () => resetQuiz());
+        
+        const progSpan = document.getElementById('progressText');
+        if (progSpan) progSpan.innerText = `Selesai | Skor: ${correctCount}/${totalQuestions}`;
+    }
+
+    function resetQuiz() {
+        quizCompleted = false;
+        currentIndex = 0;
+        userSelections = allQuestions.map(q => ({ qid: q.id, selected: null, isCorrect: false }));
+        renderCurrentQuestion();
+    }
+
+    function renderCurrentQuestion() {
+        if (quizCompleted) return;
+        
+        if (countAnswered() === totalQuestions && totalQuestions > 0) {
+            finishAndShowResult();
+            return;
+        }
+        
+        if (currentIndex >= totalQuestions) {
+            currentIndex = 0;
+        }
+        
+        const q = allQuestions[currentIndex];
+        const currentSaved = userSelections.find(s => s.qid === q.id);
+        const selectedVal = currentSaved ? currentSaved.selected : null;
+        
+        const opts = [
+            { letter: 'A', text: q.opt_a },
+            { letter: 'B', text: q.opt_b },
+            { letter: 'C', text: q.opt_c },
+            { letter: 'D', text: q.opt_d }
+        ];
+        if (q.opt_e && q.opt_e.trim() !== "") opts.push({ letter: 'E', text: q.opt_e });
+        
+        let optionsHtml = '';
+        for (let opt of opts) {
+            const checkedAttr = (selectedVal === opt.letter) ? 'checked' : '';
+            optionsHtml += `
+                <div class="option-item" data-letter="${opt.letter}">
+                    <input type="radio" name="questionOption" value="${opt.letter}" id="opt_${opt.letter}" ${checkedAttr}>
+                    <label class="option-label" for="opt_${opt.letter}">${escapeHtml(opt.text)}</label>
+                </div>
+            `;
+        }
+        
+        const mainHtml = `
+            <div class="question-card">
+                <div class="question-text">${escapeHtml(q.text)}</div>
+                <div class="options-list" id="optionsContainer">
+                    ${optionsHtml}
+                </div>
+            </div>
+            <div class="btn-group">
+                <button id="prevBtn" ${currentIndex === 0 ? 'disabled' : ''}>◀ Sebelumnya</button>
+                <button id="nextBtn" class="submit-btn">Berikutnya ▶</button>
+                <button id="resetMidBtn" class="reset-btn">⟳ Reset Kuis</button>
+                <button id="submitAllBtn" class="submit-btn" style="background:#7f5539;">📊 Submit & Lihat Skor</button>
+            </div>
+            <div class="info-area">
+                <span class="status-badge" id="progressText">Soal ${currentIndex+1} dari ${totalQuestions}</span>
+                <span class="score-area" id="liveScoreInfo">📋 Terjawab: ${countAnswered()}/${totalQuestions}</span>
+            </div>
+        `;
+        
+        const mainDiv = document.getElementById('mainContent');
+        mainDiv.innerHTML = mainHtml;
+        
+        const radios = document.querySelectorAll('input[name="questionOption"]');
+        radios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                saveCurrentAnswer(e.target.value);
+                updateInfoBar();
+            });
+        });
+        
+        const prevBtn = document.getElementById('prevBtn');
+        if (prevBtn) {
+            prevBtn.addEventListener('click', () => {
+                if (currentIndex > 0) {
+                    currentIndex--;
+                    renderCurrentQuestion();
+                }
+            });
+        }
+        
+        const nextBtn = document.getElementById('nextBtn');
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => {
+                const currQ = allQuestions[currentIndex];
+                const userAns = userSelections.find(s => s.qid === currQ.id);
+                if (!userAns || !userAns.selected) {
+                    alert("⚠️ Silakan pilih jawaban terlebih dahulu sebelum melanjutkan.");
+                    return;
+                }
+                if (currentIndex + 1 < totalQuestions) {
+                    currentIndex++;
+                    renderCurrentQuestion();
+                } else {
+                    if (countAnswered() === totalQuestions) {
+                        finishAndShowResult();
+                    } else {
+                        alert(`Masih ada ${totalQuestions - countAnswered()} soal yang belum dijawab. Silakan selesaikan semua soal terlebih dahulu.`);
+                        const firstEmpty = userSelections.findIndex(s => s.selected === null);
+                        if (firstEmpty !== -1) {
+                            currentIndex = firstEmpty;
+                            renderCurrentQuestion();
+                        }
+                    }
+                }
+            });
+        }
+        
+        const resetMid = document.getElementById('resetMidBtn');
+        if (resetMid) resetMid.addEventListener('click', () => resetQuiz());
+        
+        const submitAll = document.getElementById('submitAllBtn');
+        if (submitAll) {
+            submitAll.addEventListener('click', () => {
+                const unanswered = totalQuestions - countAnswered();
+                if (unanswered > 0) {
+                    if (confirm(`⚠️ Anda masih memiliki ${unanswered} soal yang belum dijawab. Lanjutkan? (Soal kosong otomatis dianggap salah)`)) {
+                        finishAndShowResult();
+                    }
+                } else {
+                    finishAndShowResult();
+                }
+            });
+        }
+    }
+    
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+    
+    initQuiz().catch(e => {
+        console.error(e);
+        document.getElementById('mainContent').innerHTML = '<div style="padding:2rem;color:#b13e3e;">Gagal memuat database kuis. Silakan refresh halaman.</div>';
+    });
+</script>
+</body>
+</html>
